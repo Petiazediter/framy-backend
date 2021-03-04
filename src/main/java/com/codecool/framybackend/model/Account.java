@@ -2,6 +2,7 @@ package com.codecool.framybackend.model;
 
 import javax.persistence.*;
 import java.sql.Date;
+import java.util.Set;
 
 @Entity
 @Table(name = "Account")
@@ -21,6 +22,21 @@ public class Account {
 
     @Column(name = "account_created")
     private Date accountCreated;
+
+    @ManyToMany
+    @JoinTable(
+            name = "GroupAccounts",
+            joinColumns = @JoinColumn(name = "account_id"),
+            inverseJoinColumns = @JoinColumn(name = "group_id"))
+    Set<Group> groups;
+
+    public Set<Group> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(Set<Group> groups) {
+        this.groups = groups;
+    }
 
     public Long getId() {
         return id;
