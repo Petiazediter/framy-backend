@@ -1,11 +1,14 @@
 package com.codecool.framybackend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "Group")
+@Entity(name = "group_table")
 public class Group {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,10 +18,11 @@ public class Group {
     private String groupName;
 
     @Column(name = "created")
-    private Date date;
+    private Timestamp created = new Timestamp(System.currentTimeMillis());
 
-    @ManyToMany(mappedBy = "groups")
-    Set<Account> accounts;
+    @JsonIgnore
+    @ManyToMany(mappedBy = "groups",fetch = FetchType.LAZY)
+    Set<Account> accounts = new HashSet<>();
 
     public Set<Account> getAccounts() {
         return accounts;
@@ -44,11 +48,11 @@ public class Group {
         this.groupName = groupName;
     }
 
-    public Date getDate() {
-        return date;
+    public Timestamp getCreated() {
+        return created;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public void setCreated(Timestamp created) {
+        this.created = created;
     }
 }

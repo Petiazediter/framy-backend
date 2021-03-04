@@ -2,10 +2,11 @@ package com.codecool.framybackend.model;
 
 import javax.persistence.*;
 import java.sql.Date;
+import java.sql.Timestamp;
+import java.util.HashSet;
 import java.util.Set;
 
-@Entity
-@Table(name = "Account")
+@Entity(name = "account")
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,14 +22,14 @@ public class Account {
     private String password;
 
     @Column(name = "account_created")
-    private Date accountCreated;
+    private Timestamp accountCreated = new Timestamp(System.currentTimeMillis());
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(
-            name = "GroupAccounts",
+            name = "group_accounts",
             joinColumns = @JoinColumn(name = "account_id"),
             inverseJoinColumns = @JoinColumn(name = "group_id"))
-    Set<Group> groups;
+    Set<Group> groups = new HashSet<>();
 
     public Set<Group> getGroups() {
         return groups;
@@ -70,11 +71,11 @@ public class Account {
         this.password = password;
     }
 
-    public Date getAccountCreated() {
+    public Timestamp getAccountCreated() {
         return accountCreated;
     }
 
-    public void setAccountCreated(Date accountCreated) {
+    public void setAccountCreated(Timestamp accountCreated) {
         this.accountCreated = accountCreated;
     }
 }
