@@ -32,13 +32,11 @@ public class AccountController {
         Finding the userId cookie, and trying to log in with it.
      */
     @CrossOrigin("*")
-    @PostMapping("/api/cookielogin")
+    @GetMapping("/api/cookielogin")
     public Account loginWithCookie ( HttpServletResponse response,HttpServletRequest request) throws Exception {
         PasswordUtils passwordUtils = new PasswordUtils();
-        System.out.println(request.getHeader( "Cookie" ));
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
-            System.out.println("1");
              List<Cookie> cookieList = Arrays.stream(cookies)
                     .filter(cookie -> cookie.getName().equals("userId")).collect(Collectors.toList());
              if ( cookieList.size() > 0){
@@ -48,25 +46,31 @@ public class AccountController {
                  return accountRepository.findById( id ).orElse(null);
              }
         }
-        System.out.println("3");
         return null;
     }
-
-    /*
-        /api/login
-        Login with user credentials
-     */
     @CrossOrigin("*")
     @PostMapping("/api/login")
-    public Account loginWithUserCredentials(@RequestBody(required = true) Account account) throws Exception {
+    public Account loginWithUserCredentials(@RequestBody(required = true) Account account, HttpServletResponse response) throws Exception {
         if (account != null) {
             PasswordUtils passwordUtils = new PasswordUtils();
             String password = account.getPassword();
             String encryptedPassword = passwordUtils.encrypt(password);
-            System.out.println(encryptedPassword);
-            return accountRepository.findAccountByCredentials(account.getUsername(),encryptedPassword, account.getEmailAddress());
+            Account account1 = accountRepository.findAccountByUsernameAndPassword(account.getUsername(),encryptedPassword);
+            if ( account1 != null){
+                Cookie cookie = createCookieFromAccount(account1);
+                response.addCookie(cookie);
+            }
+            return account1;
         }
         return null;
+    }
+
+    private Cookie createCookieFromAccount(Account account) throws Exception {
+        PasswordUtils passwordUtils = new PasswordUtils();
+        Cookie cookie = new Cookie("userId", passwordUtils.encrypt(account.getId().toString()));
+        cookie.setMaxAge(7 * 24 * 60 * 60); // expires in 7 days
+        cookie.setPath("/");
+        return cookie;
     }
 
     /*
@@ -82,28 +86,15 @@ public class AccountController {
             account.setPassword(encryptedPassword);
             if (accountRepository.getAccountsByUsernameAndEmail(account.getUsername(),account.getPassword()).size() == 0){
                 Account savedAccount = accountRepository.save(account);
-                Cookie cookie = new Cookie("userId", passwordUtils.encrypt(savedAccount.getId().toString()));
-                cookie.setMaxAge(7 * 24 * 60 * 60); // expires in 7 days
-                cookie.setPath("/");
+                Cookie cookie = createCookieFromAccount(savedAccount);
                 response.addCookie(cookie);
                 return savedAccount;
+            } else{
+                System.out.println("Already used.");
+                return null;
             }
-        }
-        System.out.println("No account");
-        return null;
-    }
-
-    @GetMapping("/api/accounts")
-    @CrossOrigin("*")
-    public List<Account> getAccounts(){
-        return accountRepository.findAll();
-    }
-
-    @CrossOrigin("*")
-    @PostMapping("/api/account")
-    public Account insertAccount(@RequestBody(required = true)Account account){
-        if ( account != null) {
-            return accountRepository.save(account);
+        }else {
+            System.out.println("No account");
         }
         return null;
     }
