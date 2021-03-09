@@ -6,20 +6,26 @@ import com.codecool.framybackend.model.Group;
 import com.codecool.framybackend.repositories.AccountRepository;
 import com.codecool.framybackend.repositories.GroupRepository;
 import com.codecool.framybackend.utils.PasswordUtils;
+import org.apache.catalina.connector.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import java.awt.*;
+import java.net.http.HttpResponse;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@CrossOrigin(origins = "http://localhost:4200", maxAge = 3600,allowedHeaders = "*", allowCredentials = "true")
 @RestController
 public class AccountController {
+
+    private static final String COOKIE_USERID = "userId";
 
     @Autowired
     private AccountRepository accountRepository;
@@ -31,24 +37,21 @@ public class AccountController {
         /api/cookieLogin
         Finding the userId cookie, and trying to log in with it.
      */
-    @CrossOrigin("*")
     @GetMapping("/api/cookielogin")
     public Account loginWithCookie ( HttpServletResponse response,HttpServletRequest request) throws Exception {
         PasswordUtils passwordUtils = new PasswordUtils();
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
              List<Cookie> cookieList = Arrays.stream(cookies)
-                    .filter(cookie -> cookie.getName().equals("userId")).collect(Collectors.toList());
+                    .filter(cookie -> cookie.getName().equals(COOKIE_USERID)).collect(Collectors.toList());
              if ( cookieList.size() > 0){
                  Cookie cookie = cookieList.get(0);
-                 System.out.println(cookie);
                  Long id = Long.parseLong(passwordUtils.decrypt(cookie.getValue()));
                  return accountRepository.findById( id ).orElse(null);
              }
         }
         return null;
     }
-    @CrossOrigin("*")
     @PostMapping("/api/login")
     public Account loginWithUserCredentials(@RequestBody(required = true) Account account, HttpServletResponse response) throws Exception {
         if (account != null) {
@@ -60,6 +63,7 @@ public class AccountController {
                 Cookie cookie = createCookieFromAccount(account1);
                 response.addCookie(cookie);
             }
+
             return account1;
         }
         return null;
@@ -67,7 +71,7 @@ public class AccountController {
 
     private Cookie createCookieFromAccount(Account account) throws Exception {
         PasswordUtils passwordUtils = new PasswordUtils();
-        Cookie cookie = new Cookie("userId", passwordUtils.encrypt(account.getId().toString()));
+        Cookie cookie = new Cookie(COOKIE_USERID, passwordUtils.encrypt(account.getId().toString()));
         cookie.setMaxAge(7 * 24 * 60 * 60); // expires in 7 days
         cookie.setPath("/");
         return cookie;
@@ -77,7 +81,6 @@ public class AccountController {
         /api/register
         Register with user credentials
      */
-    @CrossOrigin("*")
     @PostMapping("/api/register")
     public Account registerAccount(@RequestBody(required = true) Account account,HttpServletResponse response) throws Exception {
         if ( account != null){
