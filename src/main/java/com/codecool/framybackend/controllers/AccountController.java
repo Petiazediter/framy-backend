@@ -102,7 +102,21 @@ public class AccountController {
         return null;
     }
 
-    @CrossOrigin("*")
+    @GetMapping("/api/signout")
+    public int signOut(HttpServletRequest request,HttpServletResponse response){
+            Cookie[] cookies = request.getCookies();
+            List<Cookie> cookieList = Arrays.stream(cookies)
+                    .filter(cookie -> cookie.getName().equals(COOKIE_USERID)).collect(Collectors.toList());
+            if ( cookieList.size() >0) {
+                Cookie cookie = cookieList.get(0);
+                cookie.setValue("");
+                cookie.setPath("/");
+                cookie.setMaxAge(0);
+                response.addCookie(cookie);
+            }
+            return Response.SC_OK;
+    }
+
     @PostMapping("/api/add-to-group")
     public Account addToGroup(@RequestBody(required = true) AccountGroupWrapper accountGroupWrapper){
         Account account = accountRepository.findById(accountGroupWrapper.getAccount().getId()).orElse(null);
